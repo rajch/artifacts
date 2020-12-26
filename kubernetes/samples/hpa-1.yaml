@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-data
+  labels:
+    sample: horizontalpodautoscaler
+data:
+  index.php: |
+    <?php
+      $x = 0.0001;
+      for ($i = 0; $i <= 1000000; $i++) {
+        $x += sqrt($x);
+      }
+      echo "OK!";
+    ?>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-dep
+  labels:
+    sample: horizontalpodautoscaler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      sample: horizontalpodautoscaler
+      layer: backend
+  template:
+    metadata:
+      labels:
+        sample: horizontalpodautoscaler
+        layer: backend
+    spec:
+      volumes:
+        - name: indexvol
+          configMap:
+              name: backend-data
+      containers:
+        - name: c1
+          image: php:5-apache
+          volumeMounts:
+            - mountPath: /var/www/html/index.php
+              name: indexvol
+              subPath: index.php
+          resources:
+            requests:
+              cpu: 0.2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  labels:
+    sample: horizontalpodautoscaler
+spec:
+  type: NodePort
+  selector:
+    sample: horizontalpodautoscaler
+    layer: backend
+  ports:
+    - name: web
+      port: 80
+      nodePort: 31000
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: backend-dep-scaler
+  labels:
+    sample: horizontalpodautoscaler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: backend-dep
+  targetCPUUtilizationPercentage: 50
+  maxReplicas: 6
+  minReplicas: 1

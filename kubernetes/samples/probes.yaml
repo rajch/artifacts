@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probes-dep
+  labels:
+    day: day5
+    sample: probes
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      day: day5
+      sample: probes
+      layer: probes-dep
+  template:
+    metadata:
+      labels:
+        day: day5
+        sample: probes
+        layer: probes-dep
+    spec:
+      containers:
+        - name: c1
+          image: rajchaudhuri/probestest:0.1.0
+          # livenessProbe:
+          #   httpGet:
+          #     port: 8080
+          #     path: /probes/liveness
+          #   initialDelaySeconds: 10
+          #   periodSeconds: 10
+          # readinessProbe:
+          #   httpGet:
+          #     port: 8080
+          #     path: /probes/readiness
+          #   initialDelaySeconds: 10
+          #   periodSeconds: 10
+          env:
+            - name: READINESS_FAIL_AFTER
+              value: "5"
+            - name: READINESS_RECOVER_AFTER
+              value: "3"
+            - name: LIVENESS_FAIL_AFTER
+              value: "10"
+            - name: LIVENESS_RECOVER_AFTER
+              value: "0"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: probes-svc
+  labels:
+    day: day5
+    sample: probes
+spec:
+  type: NodePort
+  selector:
+    day: day5
+    sample: probes
+    layer: probes-dep
+  ports:
+    - name: probestest
+      port: 8080
+      nodePort: 31000

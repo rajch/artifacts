@@ -1,0 +1,113 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: db-pvc
+  labels:
+    day: day4
+    sample: dbapp
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: kuttiproject-local-delete
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-dep
+  labels:
+    day: day4
+    sample: dbapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      day: day4
+      sample: dbapp
+      layer: backend
+  template:
+    metadata:
+      labels:
+        day: day4
+        sample: dbapp
+        layer: backend
+    spec:
+      volumes:
+        - name: dbvol
+          persistentVolumeClaim:
+            claimName: db-pvc
+      containers:
+        - name: database
+          image: mysql:5.7
+          volumeMounts:
+            - name: dbvol
+              mountPath: /var/lib/mysql
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: something
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-svc
+  labels:
+    day: day4
+    sample: dbapp
+spec:
+  type: ClusterIP
+  selector:
+    day: day4
+    sample: dbapp
+    layer: backend
+  ports:
+    - name: mysql
+      port: 3306
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fe-dep
+  labels:
+    day: day4
+    sample: dbapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      day: day4
+      sample: dbapp
+      layer: frontend
+  template:
+    metadata:
+      labels:
+        day: day4
+        sample: dbapp
+        layer: frontend
+    spec:
+      containers:
+        - name: webserver
+          image: adminer:4.7
+          env:
+            - name: ADMINER_DEFAULT_SERVER
+              value: db-svc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fe-svc
+  labels:
+    day: day4
+    sample: dbapp
+spec:
+  type: NodePort
+  selector:
+    day: day4
+    sample: dbapp
+    layer: frontend
+  ports:
+    - name: adminer
+      port: 8080
+      nodePort: 31000
+ 

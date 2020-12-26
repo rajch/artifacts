@@ -1,0 +1,98 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: rmq-hs
+  labels:
+    day: five
+    sample: rmq-sts
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    day: five
+    sample: rmq-sts
+    layer: backend
+  ports:
+    - name: management
+      port: 15672
+    - name: amqp
+      port: 5672
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rmq-sts
+  labels:
+    day: five
+    sample: rmq-sts
+spec:
+  serviceName: rmq-hs
+  replicas: 2
+  selector:
+    matchLabels:
+      day: five
+      sample: rmq-sts
+      layer: backend
+  template:
+    metadata:
+      labels:
+        day: five
+        sample: rmq-sts
+        layer: backend
+    spec:
+      containers:
+        - name: c1
+          image: rabbitmq:3.7-management-alpine
+          volumeMounts:
+            - name: rmq-vol
+              mountPath: /var/lib/rabbitmq
+          env:
+            - name: RABBITMQ_DEFAULT_USER
+              value: admin
+            - name: RABBITMQ_DEFAULT_PASS
+              value: something
+            - name: RABBITMQ_ERLANG_COOKIE
+              value: butter
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: RABBITMQ_USE_LONGNAME
+              value: "true"
+            - name: RABBITMQ_NODENAME
+              value: rabbit@$(HOSTNAME).rmq-hs.default.svc.cluster.local
+            - name: RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS
+              value: "-rabbit cluster_formation [{peer_discovery_backend,rabbit_peer_discovery_classic_config}] cluster_nodes {['rabbit@rmq-sts-0.rmq-hs.default.svc.cluster.local','rabbit@rmq-sts-1.rmq-hs.default.svc.cluster.local'],disc}"
+  volumeClaimTemplates:
+    - metadata:
+        name: rmq-vol
+        labels:
+          day: five
+          sample: rmq-sts
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+        storageClassName: kuttiproject-local-delete
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rmq-np
+  labels:
+    day: five
+    sample: rmq-sts
+spec:
+  type: NodePort
+  selector:
+    day: five
+    sample: rmq-sts
+    layer: backend
+  ports:
+    - name: management
+      port: 15672
+      nodePort: 31300
+    - name: amqp
+      port: 5672
