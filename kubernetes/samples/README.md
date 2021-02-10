@@ -9,3 +9,5 @@ This directory contains samples that we use during our trainings. The raw forms 
 |probes|Demonstrates liveness and readiness probes using [probestest](https://github.com/rajch/ttws).|http://tiny.cc/rw-sample-probes-1|
 |statefulset|Demonstrates StatefulSet.|http://tiny.cc/rw-sample-sts-1|
 |dbapp|Demonstrates a full application.|http://tiny.cc/rw-sample-dbapp-1|
+|secrets|Demonstrates Secret usage.|http://tiny.cc/rw-sample-secrets-1|
+|resources|Demonstrates resource requirements.|http://tiny.cc/rw-sample-resources-1|

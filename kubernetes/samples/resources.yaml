@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dep5
+  labels:
+    day: day4
+    sample: resources
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      day: day4
+      sample: resources
+      layer: dep5
+  template:
+    metadata:
+      labels:
+        day: day4
+        sample: resources
+        layer: dep5
+    spec:
+      containers:
+        - name: c1
+          image: nginx:alpine
+          resources:
+            requests:
+              memory: 4G
+            limits:
+              memory: 8G
